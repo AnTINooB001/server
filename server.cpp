@@ -20,6 +20,7 @@ void main_loop(Host<T>& host)
     system::error_code ec;
     int avail = 0;
     int readed = 0;
+    int res_readed = 0;
     int ind = 0;
     std::vector<char> buffer(64);
     
@@ -28,30 +29,23 @@ void main_loop(Host<T>& host)
             if(ec || (avail = (*i)->available()) == 0) {
                 continue;
             }
-            //asio::ip::tcp::socket::read_some()
 
-            // std::string res{};
-            // do {
-            //     std::cout<<"Reading iter\n";
-            //     readed = (*i)->read(buffer);
-            //     res += buffer;
-            //     avail -= readed;
-            // }while(avail != 0);
+            std::string res{};
+            do {
+                std::cout<<"Reading iter\n";
+                readed = (*i)->read(buffer.data(),buffer.size(),ec);
+                res += buffer.data();
+                avail -= readed;
+                res_readed += readed;
+            }while(avail != 0);
             
-            // std::cout<<"Readed\n"
-            //             "Try to write";
-            // for (auto j = host.begin(); j != host.end(); j++) {
-            //     if(*(*i) == *(*j))
-            //         continue;
-            //     (*j)->write(res);
-            //      std::cout<<"Writed\n";
-            // }
-            (*i)->read(buffer.data(),buffer.size(),ec);
-            if(ec)
-                std::cout<<"ec " << ec.message();
-            else
-            std::cout<<buffer.data() << std::endl;
-            std::cout<< "Connections count - " << host.size() <<std::endl;
+            std::cout<<"Readed\n" << res_readed << "\nTry to write";
+            for (auto j = host.begin(); j != host.end(); j++) {
+                if((*i).get() == (*j).get())
+                    continue;
+                int w = (*j)->write(res,ec);
+                std::cout<<"Writed\n" << w << std::endl;
+            }
         }
     }
 }

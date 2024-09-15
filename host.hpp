@@ -1,7 +1,13 @@
-#include "connection_manager.hpp"
+#ifndef THOST
+#define THOST
+
+#include "client.hpp"
+#include "utils.hpp"
 #include <boost/asio.hpp>
+#include <boost/thread.hpp>
 #include <iostream>
 #include <string>
+#include <algorithm>
 #include <memory>
 
 using namespace boost;
@@ -13,20 +19,58 @@ class Host
     using Client_t = Client<T>;
     using Collection_t =  std::vector<std::shared_ptr<Client_t>>;
 
+    thread th;
     system::error_code ec;
     asio::io_context context;
     typename T::acceptor acc{context};
     Collection_t clients;
-    C_manager<Collection_t,Client_t,T> manager{clients,acc};
     int port;
     std::string addr;
+    void main_loop();
+    Client_t get_client();
+    void add_new(Client_t& client);
+    void add(typename Collection_t::iterator it, Client_t& client);
 public:
     Host(const std::string&, const int, const int);
     void open();
     auto begin() const;
     auto end() const;
     size_t size() const;
+    ~Host();
 };
+
+template <class T>
+void Host<T>::main_loop()
+{
+     auto client = get_client();
+     auto cmp = [&](std::shared_ptr<Client_t> val) {
+         return *val == client;
+     };
+     auto it = std::find_if(clients.begin(),clients.end(),cmp);
+     if(it != clients.end())
+         add(it,client);
+     else
+         add_new(client);
+}
+
+template <class T>
+typename Host<T>::Client_t Host<T>::get_client()
+{
+    auto sock = acc.accept();
+    return Client_t(sock);
+}
+
+template <class T>
+void Host<T>::add_new(Client_t& client)
+{
+    clients.push_back(std::make_shared<Client_t>(client));
+}
+
+template <class T>
+void Host<T>::add(typename Collection_t::iterator it,Client_t& client)
+{
+    clients.insert(it,std::make_shared<Client_t>(client));
+}
 
 template <class T>
 Host<T>::Host(const std::string& addr_, const int port_, const int count) : addr{addr_}, port{port_}
@@ -52,8 +96,12 @@ void Host<T>::open()
     
     acc.listen();
 
-    manager.manage();
     std::cout<<"host opened\n";
+
+    th = thread([&](){
+        while(1)
+            main_loop();
+    });
 }
 
 template <class T>
@@ -74,51 +122,11 @@ size_t Host<T>::size() const
     return clients.size();
 }
 
-// template <class T = tcp>
-// class Host
-// {
-//     asio::io_context context;
-//     C_manager<T> manager;
-//     std::string& addr_from_name(std::string&);
-// public:
-//     void open(std::string,int);
-//     auto begin() const;
-//     auto end() const;
-// };
+template <class T>
+Host<T>::~Host()
+{
+    if(th.joinable())
+        th.join();
+}
 
-// template <class T>
-// std::string& Host<T>::addr_from_name(std::string& name)
-// {
-//     system::error_code ec;
-//     typename T::resolver res(context);
-//     auto cont = res.resolve(name,"",ec);
-
-//     if(ec) {
-//         std::cout<< "Cant resolve - " << name << " detail: " << ec.message() << std::endl;
-//         return name;
-//     }
-
-//     name = cont->endpoint().address().to_string();
-//     return name;
-// }
-
-// template <class T>
-// void Host<T>::open(std::string ip_addr,int port)
-// {
-//     std::string ip = addr_from_name(ip_addr);
-//     manager.init(ip,port);
-//     manager.manage();
-//     std::cout<< "Hosting " <<ip << " opened on port "<< port << std::endl;
-// }
-
-// template <class T>
-// auto Host<T>::begin() const
-// {
-//     return manager.begin();
-// }
-
-// template <class T>
-// auto Host<T>::end() const
-// {
-//     return manager.end();
-// }
+#endif
