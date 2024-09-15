@@ -32,7 +32,7 @@ void main_loop(Host<T>& host)
 
             // std::string res{};
             // do {
-            //     std::cout<<"Reading iter\n";
+            //     std::cout<<"Reayding iter\n";
             //     readed = (*i)->read(buffer);
             //     res += buffer;
             //     avail -= readed;

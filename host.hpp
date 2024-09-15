@@ -28,10 +28,10 @@ public:
     size_t size() const;
 };
 
-template <class T>
+template <class T>y
 Host<T>::Host(const std::string& addr_, const int port_, const int count) : addr{addr_}, port{port_}
 {
-    clients.reserve(count);
+    clients.reserve(count); 
 }
 
 template <class T>
