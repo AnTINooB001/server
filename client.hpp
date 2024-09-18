@@ -19,6 +19,8 @@ public:
     int write(char*, size_t,system::error_code&);
     int available() const;
     bool is_open() const;
+    void close();
+    asio::ip::address address() const;
 
     bool operator==(const Client<T>&) const;
     void operator=(Client<T> c) = delete;
@@ -68,6 +70,19 @@ template <class T>
 bool Client<T>::is_open() const
 {
     return socket.is_open();
+}
+
+template <class T>
+void Client<T>::close()
+{
+    socket.close();
+}
+
+
+template <class T>
+asio::ip::address Client<T>::address() const
+{
+    return addr;
 }
 
 template <class T>

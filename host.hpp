@@ -51,6 +51,7 @@ void Host<T>::main_loop()
          add(it,client);
      else
          add_new(client);
+    std::cout<<"Connection established with " << client.address() << std::endl;
 }
 
 template <class T>
@@ -127,6 +128,13 @@ Host<T>::~Host()
 {
     if(th.joinable())
         th.join();
+    acc.close();
+    for (size_t i = 0; i < clients.size(); i++)
+    {
+        if(clients[i]->is_open())
+            clients[i]->close();
+    }
+    
 }
 
 #endif

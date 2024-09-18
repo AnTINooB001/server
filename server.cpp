@@ -5,8 +5,8 @@ void main_loop(Host<T>& host);
 
 int main(int argc, char* argv[])
 {
-    std::string addr = boost::asio::ip::host_name();
-    Host host(addr,1111,100);
+    std::string addr = "0.0.0.0";
+    Host host(addr,1111,10);
 
     host.open();
     main_loop(host);
@@ -25,22 +25,24 @@ void main_loop(Host<T>& host)
     std::vector<char> buffer(64);
     
     while(1) {
-        for (auto i = host.begin(); i != host.end(); i++) {
+        int iter = 0;
+        for (auto i = host.begin(); i != host.end(); i++,iter++) {
             if(ec || (avail = (*i)->available()) == 0) {
                 continue;
             }
-
+            std::cout<<"iteration i = " << iter << std::endl;
             std::string res{};
             do {
-                std::cout<<"Reading iter\n";
                 readed = (*i)->read(buffer.data(),buffer.size(),ec);
                 res += buffer.data();
                 avail -= readed;
                 res_readed += readed;
             }while(avail != 0);
             
-            std::cout<<"Readed\n" << res_readed << "\nTry to write";
-            for (auto j = host.begin(); j != host.end(); j++) {
+            std::cout<<"Readed\n" << res_readed << "\n";
+            int ji = 0;
+            for (auto j = host.begin(); j != host.end(); j++,ji++) {
+                std::cout<< "ji = " << ji << std::endl;
                 if((*i).get() == (*j).get())
                     continue;
                 int w = (*j)->write(res,ec);
